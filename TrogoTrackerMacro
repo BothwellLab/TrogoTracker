@@ -1,0 +1,39 @@
+macro "Nuclear Voronoi [o]"
+{
+  rename("nuc");
+  run("Command From Macro", "command=[de.csbdresden.stardist.StarDist2D], args=['input':'nuc', 'modelChoice':'Versatile (fluorescent nuclei)', 'normalizeInput':'true', 'percentileBottom':'1.0', 'percentileTop':'99.8', 'probThresh':'0.45', 'nmsThresh':'0.6000000000000001', 'outputType':'Both', 'nTiles':'1', 'excludeBoundary':'2', 'roiPosition':'Automatic', 'verbose':'false', 'showCsbdeepProgress':'false', 'showProbAndDist':'false'], process=[false]");
+  selectWindow("Label Image");
+  close();
+  roiManager("Deselect");
+  roiManager("Combine");
+  setBackgroundColor(0, 0, 0);
+  run("Clear Outside");
+  setAutoThreshold("Default dark no-reset");
+  //run("Threshold...");
+  setThreshold(2, 65535, "raw");
+  run("Close");
+  setOption("BlackBackground", true);
+  run("Convert to Mask");
+  run("Watershed");
+  roiManager(“Close”);
+  //select nuclei_mask
+  run("Analyze Particles...", "add");
+  // here we make the Voronoi  
+  run("Voronoi");
+  rename("voronoi");
+  selectImage("voronoi");
+  setThreshold(1, 255);
+  run("Convert to Mask");
+  voronoi_img = getTitle();
+}
+macro "Cell Huang Thresholding [l]"
+{
+  rename("cell");
+  run("Auto Threshold", "method=Huang2 white");
+  run("Convert to Mask");
+  run("Median...", "radius=2");
+  run("Fill Holes");
+  imageCalculator("Subtract create", "cell","voronoi");
+  selectWindow("Result of cell");
+  run("Analyze Particles...", "size=10-Infinity add");
+}
